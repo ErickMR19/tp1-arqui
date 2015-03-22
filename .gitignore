@@ -26,3 +26,9 @@
 *.exe
 *.out
 *.app
+
+#Archivos de la tarea
+hosts
+ListaI.txt
+ListaF.txt
+
