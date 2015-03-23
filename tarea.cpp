@@ -1,8 +1,11 @@
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 
 #include "mpi.h"
+
 bool comprobarNumeroPotenciaDeDos(int);
+
 int main(int argc, char ** argv){
     // identificador de cada proceso;
     int idProceso;
@@ -40,8 +43,8 @@ int main(int argc, char ** argv){
         if( tamArreglo && 
             // verifica que el numero de procesos sea una potencia de dos
             comprobarNumeroPotenciaDeDos(numProcesos) &&
-            // verifica que el tamano del arreglo sea mayor al numero de procesos
-            tamArreglo > numProcesos %% 
+            // verifica que el tamano del arreglo sea mayor o igual al numero de procesos
+            tamArreglo >= numProcesos && 
             // verifica que el tamano del arreglo sea divisible por el numero de procesos
             !(tamArreglo%numProcesos)  )
         {
@@ -52,9 +55,9 @@ int main(int argc, char ** argv){
                 arregloTotal[i] = rand()%2000;
             }
             // abre el archivo ListaI
-            ofstream archivoListaInicial("ListaI.txt", os::in);
+            std::ofstream archivoListaInicial("ListaI.txt");
             // verifica si puedo abrise
-            if( archivoListaInicial.open() )
+            if( archivoListaInicial.is_open() )
             {
                 // copia los elementos del arreglo en el archivo
                 for(int i = 0; i < tamArreglo;++i){
