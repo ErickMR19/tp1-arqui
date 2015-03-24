@@ -19,6 +19,7 @@ int main(int argc, char ** argv){
     int numProcesos;
     // Iniciliza MPI
     MPI_Init(&argc,&argv);
+    MPI_Status status;
     // arreglos
     int * arregloTotal;
     int * arregloLocal;
@@ -33,9 +34,9 @@ int main(int argc, char ** argv){
     MPI_Comm_rank(MPI_COMM_WORLD,&idProceso);
        
     // cantidad de numeros del vector
-    int tamArreglo = 0;
+    int tamArreglo;
     
-    
+    int exponenteProcesos;
     
     if( idProceso == 0 ){
         srand(time(0));
@@ -78,6 +79,7 @@ int main(int argc, char ** argv){
             }
             // ahora se tiene el tamano que tendra cada arreglo local
             tamArreglo /= numProcesos;
+            exponenteProcesos = obtenerExponenteDeDosCorrespondiente(numProcesos);
         }
         else {
             std::cout << "ejecucion terminada: parametros invalidos" << std::endl;
@@ -90,13 +92,44 @@ int main(int argc, char ** argv){
     MPI_Bcast(&parametrosCorrectos, 1, MPIR_CXX_BOOL, 0, MPI_COMM_WORLD);
     
     if( parametrosCorrectos ){
+        // pasa a todos los procesos la longitud que tendra cada arreglo
         MPI_Bcast(&tamArreglo, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        // el numero de iteraciones que se harán
+        MPI_Bcast(&exponenteProcesos, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        //crea el arreglo local donde cada proceso guaradará su parte del arreglo
         arregloLocal = new int[tamArreglo];
+        //reparte el arreglo principal entre todos los arreglos
         MPI_Scatter(arregloTotal,tamArreglo,MPI_INT,arregloLocal,tamArreglo,MPI_INT,0,MPI_COMM_WORLD);
+        //cada proceso ordena su arreglo
         mergesort(arregloLocal,tamArreglo);
         // Ciclo while donde lo van devolviendo hasta llegar a la raiz
-        for(int i = 0; i < tamArreglo; ++i){
-            std::cout << "Id proceso: " << idProceso << " arreglo["<<i<<"]: "<<arregloLocal[i]<<'\n';
+        
+        //Variables para la reduccion
+        int modulo = 2;
+        int selector = 1;
+        
+        int * arregloTemporalParaRecibir;
+        int * arregloTemporalDestino;
+        while( exponenteProcesos ){
+            if(idProceso % modulo == 0){
+                arregloTemporalParaRecibir = new int[tamArreglo];
+                MPI_Recv(arregloTemporalParaRecibir,tamArreglo,MPI_INT,idProceso-selector,19, MPI_COMM_WORLD,&status);
+                tamArreglo = tamArreglo << 1;
+                arregloTemporalDestino = new int[tamArreglo];
+                ordenarSubArreglosEnDestino(arregloTemporalParaRecibir, tamArreglo/2, arregloLocal, tamArreglo/2, arregloTemporalDestino);
+                delete[] arregloTemporalParaRecibir;
+                delete[] arregloLocal;
+                arregloLocal = arregloTemporalDestino;
+            }
+            else if(idProceso % modulo == selector){
+                MPI_Send(arregloLocal,tamArreglo,MPI_INT,idProceso-selector,19, MPI_COMM_WORLD);
+                break;
+            }
+        }
+        if(idProceso==0){
+            for(int i=0; i<tamArreglo;++i){
+                std::cout << arregloLocal << std::endl;
+            }
         }
         delete[] arregloLocal;
     }
