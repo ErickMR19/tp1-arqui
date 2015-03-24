@@ -5,6 +5,11 @@
 #include "mpi.h"
 
 bool comprobarNumeroPotenciaDeDos(int);
+int obtenerExponenteDeDosCorrespondiente(int);
+void mergesort(int *, int);
+void mergesortR(int *, int *, int);
+void ordenarSubArreglos(int *, int, int *, int, int *);
+
 
 int main(int argc, char ** argv){
     // identificador de cada proceso;
@@ -87,7 +92,7 @@ int main(int argc, char ** argv){
         MPI_Bcast(&tamArreglo, 1, MPI_INT, 0, MPI_COMM_WORLD);
         arregloLocal = new int[tamArreglo];
         MPI_Scatter(arregloTotal,tamArreglo,MPI_INT,arregloLocal,tamArreglo,MPI_INT,0,MPI_COMM_WORLD);
-        // TODO: cada proceso ordena su arreglo
+        mergesort(arregloLocal,tamArreglo);
         // Ciclo while donde lo van devolviendo hasta llegar a la raiz
         for(int i = 0; i < tamArreglo; ++i){
             std::cout << "Id proceso: " << idProceso << " arreglo["<<i<<"]: "<<arregloLocal[i]<<'\n';
@@ -125,4 +130,140 @@ int obtenerExponenteDeDosCorrespondiente(int numero){
         comparador=comparador<<1;
     }
     return respuesta;
+}
+
+
+void mergesort(int * arreglo, int tamano)
+{
+    // se hace un vector temporal de tamano n
+    int * vectorTemporal = new int[tamano];
+    mergesortR(arreglo,vectorTemporal, tamano);
+    delete [] vectorTemporal;
+};
+
+/* =========== METODOS MERGESORT ========== */
+
+/**
+ * Es el llamado mergesort que se invoca recursivamente
+ */
+void mergesortR(int * arreglo, int * temporal, int tamano)
+{
+    if(tamano == 1)
+    {
+        return;
+    }
+    
+    mergesortR(arreglo,temporal, tamano/2);
+    mergesortR(arreglo+(tamano/2),temporal, tamano-tamano/2);
+    ordenarSubArreglos(arreglo,tamano/2, arreglo+(tamano/2),tamano-tamano/2, temporal);
+}
+
+/**
+ * Metodo del mergesort que se encarga de ordenar los subarreglos
+ */
+void ordenarSubArreglos(int * arreglo1, int tamano1, int * arreglo2, int tamano2, int * temporal)
+{
+    int iteradorArreglo1 = 0;
+    int iteradorArreglo2 = 0;
+    int iteradorArregloTemporal = 0;
+    
+    //va llenando el vector temporal, comparando el primer elemento de cada subarreglo
+    //se sale cuando termina de copiar todos, o ya se copiaron todos los valores de un vector
+    while (iteradorArregloTemporal < tamano1+tamano2 && iteradorArreglo1 < tamano1 && iteradorArreglo2 < tamano2)
+    {
+        if(arreglo1[iteradorArreglo1] < arreglo2[iteradorArreglo2])
+        {
+            temporal[iteradorArregloTemporal] = arreglo1[iteradorArreglo1];
+            ++iteradorArreglo1;
+        }
+        else
+        {
+            temporal[iteradorArregloTemporal] = arreglo2[iteradorArreglo2];
+            ++iteradorArreglo2;
+        }
+        ++iteradorArregloTemporal;
+        
+    }
+    
+    //entra cuando ya se copiaron todos los valores de un vector, se copian todos los del otro vector que queden
+    if (iteradorArregloTemporal < tamano1+tamano2)
+    {
+        if(iteradorArreglo1 < tamano1)
+        {
+            for (; iteradorArreglo1 < tamano1; ++iteradorArreglo1, ++iteradorArregloTemporal)
+            {
+                temporal[iteradorArregloTemporal] = arreglo1[iteradorArreglo1];
+            }
+        }
+        else
+        {
+            for (; iteradorArreglo2 < tamano2; ++iteradorArreglo2, ++iteradorArregloTemporal)
+            {
+                temporal[iteradorArregloTemporal] = arreglo2[iteradorArreglo2];
+            }
+        }
+        
+    }
+    
+    //copia el arreglo temporal en los subarreglos para que el vector original sea el que termine acomodado
+    iteradorArregloTemporal = 0;
+    for (int i = 0; i < tamano1; ++i, ++iteradorArregloTemporal)
+    {
+        arreglo1[i] = temporal[iteradorArregloTemporal];
+    }
+    for (int i = 0; i < tamano2; ++i, ++iteradorArregloTemporal)
+    {
+        arreglo2[i] = temporal[iteradorArregloTemporal];
+    }
+}
+
+/**
+  * Metodo auxiliar basado en el de ordenar los subarreglos,
+  * con la diferencia de dejar el arreglo ordenado en el
+  * arreglo pasdo por parametro llamado destino
+  **/
+void ordenarSubArreglosEnDestino(int * arreglo1, int tamano1, int * arreglo2, int tamano2, int * destino)
+{
+    int iteradorArreglo1 = 0;
+    int iteradorArreglo2 = 0;
+    int iteradorArregloTemporal = 0;
+    
+    //va llenando el vector temporal, comparando el primer elemento de cada subarreglo
+    //se sale cuando termina de copiar todos, o ya se copiaron todos los valores de un vector
+    while (iteradorArregloTemporal < tamano1+tamano2 && iteradorArreglo1 < tamano1 && iteradorArreglo2 < tamano2)
+    {
+        if(arreglo1[iteradorArreglo1] < arreglo2[iteradorArreglo2])
+        {
+            temporal[iteradorArregloTemporal] = arreglo1[iteradorArreglo1];
+            ++iteradorArreglo1;
+        }
+        else
+        {
+            temporal[iteradorArregloTemporal] = arreglo2[iteradorArreglo2];
+            ++iteradorArreglo2;
+        }
+        ++iteradorArregloTemporal;
+        
+    }
+    
+    //entra cuando ya se copiaron todos los valores de un vector, se copian todos los del otro vector que queden
+    if (iteradorArregloTemporal < tamano1+tamano2)
+    {
+        if(iteradorArreglo1 < tamano1)
+        {
+            for (; iteradorArreglo1 < tamano1; ++iteradorArreglo1, ++iteradorArregloTemporal)
+            {
+                temporal[iteradorArregloTemporal] = arreglo1[iteradorArreglo1];
+            }
+        }
+        else
+        {
+            for (; iteradorArreglo2 < tamano2; ++iteradorArreglo2, ++iteradorArregloTemporal)
+            {
+                temporal[iteradorArregloTemporal] = arreglo2[iteradorArreglo2];
+            }
+        }
+        
+    }
+    
 }
