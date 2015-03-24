@@ -46,7 +46,8 @@ int main(int argc, char ** argv){
             // verifica que el tamano del arreglo sea mayor o igual al numero de procesos
             tamArreglo >= numProcesos && 
             // verifica que el tamano del arreglo sea divisible por el numero de procesos
-            !(tamArreglo%numProcesos)  )
+            !(tamArreglo%numProcesos)  
+         )
         {
             // inicializa el arreglo total
             arregloTotal = new int[tamArreglo];
@@ -68,6 +69,8 @@ int main(int argc, char ** argv){
                 std::cerr << "No se pudo crear el archivo ListaI.txt" << std::endl;
                 //Se advierte pero se continua con la ejecución normal
             }
+            // ahora se tiene el tamano que tendra cada arreglo local
+            tamArreglo =/ numProcesos;
         }
         else {
             std::cout << "ejecucion terminada: parametros invalidos" << std::endl;
@@ -80,7 +83,15 @@ int main(int argc, char ** argv){
     MPI_Bcast(&parametrosCorrectos, 1, MPIR_CXX_BOOL, 0, MPI_COMM_WORLD);
     
     if( parametrosCorrectos ){
-        std::cout << "parametro correctos" << std::endl;
+        MPI_Bcast(&tamArreglo, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        arregloLocal = new int[tamArreglo];
+        MPI_Scatter(arregloTotal,tamArreglo,MPI_INT,arregloLocal,tamArreglo,MPI_INT,0,MPI_COMM_WORLD);
+        // TODO: cada proceso ordena su arreglo
+        // Ciclo while donde lo van devolviendo hasta llegar a la raiz
+        for(int i = 0; i < tamArreglo; ++i){
+            std::cout << "Id proceso: " << idProceso << " arreglo["<<i<<"]: "<<arregloLocal[i]<<'\n';
+        }
+        delete[] arregloLocal;
     }
     else{
         std::cout << "parametro incorrectos" << std::endl;
@@ -98,6 +109,19 @@ bool comprobarNumeroPotenciaDeDos(int numero){
             respuesta = false;
         }
         numero=numero>>1;
+    }
+    return respuesta;
+}
+
+/**
+ * Se asume que el numero enviado es una potencia de dos
+ **/
+int obtenerExponenteDeDosCorrespondiente(int numero){
+    int respuesta = 0;
+    int comparador = 1;
+    while (numero > comparador){
+        ++respuesta;
+        comparador=comparador<<1;
     }
     return respuesta;
 }
