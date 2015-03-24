@@ -25,13 +25,14 @@ int main(int argc, char ** argv){
    
     //Obtiene el identificador del proceso
     MPI_Comm_rank(MPI_COMM_WORLD,&idProceso);
+       
+    // cantidad de numeros del vector
+    int tamArreglo = 0;
     
     
     
     if( idProceso == 0 ){
         srand(time(0));
-        // cantidad de numeros del vector
-        int tamArreglo = 0;
         // solicita el numero de elementos que contendra el arreglo
         std::cout << "Inserte el numero !";
         std::cin >> tamArreglo;
@@ -70,7 +71,7 @@ int main(int argc, char ** argv){
                 //Se advierte pero se continua con la ejecución normal
             }
             // ahora se tiene el tamano que tendra cada arreglo local
-            tamArreglo =/ numProcesos;
+            tamArreglo /= numProcesos;
         }
         else {
             std::cout << "ejecucion terminada: parametros invalidos" << std::endl;
