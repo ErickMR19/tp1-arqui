@@ -9,6 +9,7 @@ int obtenerExponenteDeDosCorrespondiente(int);
 void mergesort(int *, int);
 void mergesortR(int *, int *, int);
 void ordenarSubArreglos(int *, int, int *, int, int *);
+void ordenarSubArreglosEnDestino(int *, int, int *, int, int *);
 
 
 int main(int argc, char ** argv){
@@ -226,41 +227,41 @@ void ordenarSubArreglosEnDestino(int * arreglo1, int tamano1, int * arreglo2, in
 {
     int iteradorArreglo1 = 0;
     int iteradorArreglo2 = 0;
-    int iteradorArregloTemporal = 0;
+    int iteradorArregloDestino = 0;
     
-    //va llenando el vector temporal, comparando el primer elemento de cada subarreglo
+    //va llenando el vector destino, comparando el primer elemento de cada subarreglo
     //se sale cuando termina de copiar todos, o ya se copiaron todos los valores de un vector
-    while (iteradorArregloTemporal < tamano1+tamano2 && iteradorArreglo1 < tamano1 && iteradorArreglo2 < tamano2)
+    while (iteradorArregloDestino < tamano1+tamano2 && iteradorArreglo1 < tamano1 && iteradorArreglo2 < tamano2)
     {
         if(arreglo1[iteradorArreglo1] < arreglo2[iteradorArreglo2])
         {
-            temporal[iteradorArregloTemporal] = arreglo1[iteradorArreglo1];
+            destino[iteradorArregloDestino] = arreglo1[iteradorArreglo1];
             ++iteradorArreglo1;
         }
         else
         {
-            temporal[iteradorArregloTemporal] = arreglo2[iteradorArreglo2];
+            destino[iteradorArregloDestino] = arreglo2[iteradorArreglo2];
             ++iteradorArreglo2;
         }
-        ++iteradorArregloTemporal;
+        ++iteradorArregloDestino;
         
     }
     
     //entra cuando ya se copiaron todos los valores de un vector, se copian todos los del otro vector que queden
-    if (iteradorArregloTemporal < tamano1+tamano2)
+    if (iteradorArregloDestino < tamano1+tamano2)
     {
         if(iteradorArreglo1 < tamano1)
         {
-            for (; iteradorArreglo1 < tamano1; ++iteradorArreglo1, ++iteradorArregloTemporal)
+            for (; iteradorArreglo1 < tamano1; ++iteradorArreglo1, ++iteradorArregloDestino)
             {
-                temporal[iteradorArregloTemporal] = arreglo1[iteradorArreglo1];
+                destino[iteradorArregloDestino] = arreglo1[iteradorArreglo1];
             }
         }
         else
         {
-            for (; iteradorArreglo2 < tamano2; ++iteradorArreglo2, ++iteradorArregloTemporal)
+            for (; iteradorArreglo2 < tamano2; ++iteradorArreglo2, ++iteradorArregloDestino)
             {
-                temporal[iteradorArregloTemporal] = arreglo2[iteradorArreglo2];
+                destino[iteradorArregloDestino] = arreglo2[iteradorArreglo2];
             }
         }
         
