@@ -113,7 +113,7 @@ int main(int argc, char ** argv){
         while( exponenteProcesos ){
             if(idProceso % modulo == 0){
                 arregloTemporalParaRecibir = new int[tamArreglo];
-                MPI_Recv(arregloTemporalParaRecibir,tamArreglo,MPI_INT,idProceso-selector,19, MPI_COMM_WORLD,&status);
+                MPI_Recv(arregloTemporalParaRecibir,tamArreglo,MPI_INT,idProceso+selector,19, MPI_COMM_WORLD,&status);
                 tamArreglo = tamArreglo << 1;
                 arregloTemporalDestino = new int[tamArreglo];
                 ordenarSubArreglosEnDestino(arregloTemporalParaRecibir, tamArreglo/2, arregloLocal, tamArreglo/2, arregloTemporalDestino);
@@ -302,5 +302,4 @@ void ordenarSubArreglosEnDestino(int * arreglo1, int tamano1, int * arreglo2, in
         }
         
     }
-    
 }
