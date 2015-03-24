@@ -125,10 +125,13 @@ int main(int argc, char ** argv){
                 MPI_Send(arregloLocal,tamArreglo,MPI_INT,idProceso-selector,19, MPI_COMM_WORLD);
                 break;
             }
+            --exponenteProcesos;
+            modulo = modulo << 1;
+            selector = selector << 1;    
         }
         if(idProceso==0){
             for(int i=0; i<tamArreglo;++i){
-                std::cout << arregloLocal << std::endl;
+                std::cout << arregloLocal[i] << std::endl;
             }
         }
         delete[] arregloLocal;
