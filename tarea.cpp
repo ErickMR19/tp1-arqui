@@ -5,7 +5,7 @@
 #include "mpi.h"
 
 bool comprobarNumeroPotenciaDeDos(int);
-int obtenerExponenteDeDosCorrespondiente(int);
+int obtenerLogaritmoEnBaseDos(int);
 void mergesort(int *, int);
 void mergesortR(int *, int *, int);
 void ordenarSubArreglos(int *, int, int *, int, int *);
@@ -36,7 +36,7 @@ int main(int argc, char ** argv){
     // cantidad de numeros del vector
     int tamArreglo;
     
-    int exponenteProcesos;
+    int logaritmoProcesos;
     
     if( idProceso == 0 ){
         srand(time(0));
@@ -79,7 +79,7 @@ int main(int argc, char ** argv){
             }
             // ahora se tiene el tamano que tendra cada arreglo local
             tamArreglo /= numProcesos;
-            exponenteProcesos = obtenerExponenteDeDosCorrespondiente(numProcesos);
+            logaritmoProcesos = obtenerLogaritmoEnBaseDos(numProcesos);
         }
         else {
             std::cout << "ejecucion terminada: parametros invalidos" << std::endl;
@@ -95,7 +95,7 @@ int main(int argc, char ** argv){
         // pasa a todos los procesos la longitud que tendra cada arreglo
         MPI_Bcast(&tamArreglo, 1, MPI_INT, 0, MPI_COMM_WORLD);
         // el numero de iteraciones que se harán
-        MPI_Bcast(&exponenteProcesos, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&logaritmoProcesos, 1, MPI_INT, 0, MPI_COMM_WORLD);
         //crea el arreglo local donde cada proceso guaradará su parte del arreglo
         arregloLocal = new int[tamArreglo];
         //reparte el arreglo principal entre todos los arreglos
@@ -105,8 +105,9 @@ int main(int argc, char ** argv){
         
         //Variables para la reduccion
         
-        // se utiliza para conocer que proceso envía y cual recibe
+        // se utiliza para conocer que proceso envia y cual recibe
         int modulo = 2;
+        // se utiliza para saber a cual proceso se envia y de cual se recibe
         int selector = 1;
         
         // apuntara al vector que se va a recibir
@@ -115,25 +116,36 @@ int main(int argc, char ** argv){
         int * arregloTemporalDestino;
         
         // hace el proceso una cantidad de veces que corresponde al logaritmo en base dos de la cantidad de procesos
-        while( exponenteProcesos ){
+        while( logaritmoProcesos ){
             
+            // si el modulo es cero entonces el proceso va a recibir
             if(idProceso % modulo == 0){
+                // crea un arreglo donde recibira el arreglo que le envian
                 arregloTemporalParaRecibir = new int[tamArreglo];
+                // recibe el arreglo
                 MPI_Recv(arregloTemporalParaRecibir,tamArreglo,MPI_INT,idProceso+selector,19, MPI_COMM_WORLD,&status);
+                // el tamano del arreglo ahora sera el doble
                 tamArreglo = tamArreglo << 1;
+                // crea un arreglo donde se colocaran los datos ordenados
                 arregloTemporalDestino = new int[tamArreglo];
-                ordenarSubArreglosEnDestino(arregloTemporalParaRecibir, tamArreglo/2, arregloLocal, tamArreglo/2, arregloTemporalDestino);
+                // mezca los arreglos que ya tenia, y el que recibio
+                ordenarSubArreglosEnDestino(arregloTemporalParaRecibir, arregloLocal, tamArreglo/2, arregloTemporalDestino);
+                
+                // se libera la memora que ya no se necesita
                 delete[] arregloTemporalParaRecibir;
                 delete[] arregloLocal;
                 arregloLocal = arregloTemporalDestino;
             }
-            
+            // si el modulo no es cero entonces va a enviar, y a terminar
             else{
+                // envia su arreglo ordenado
                 MPI_Send(arregloLocal,tamArreglo,MPI_INT,idProceso-selector,19, MPI_COMM_WORLD);
+                // se sale del while
                 break;
             }
-            
-            --exponenteProcesos;
+            // ya termino una iteracion
+            --logaritmoProcesos;
+            // se multiplica por dos el modulo y la variable selector
             modulo = modulo << 1;
             selector = selector << 1;    
         }
@@ -159,7 +171,7 @@ int main(int argc, char ** argv){
             char respuesta = 0;
             std::cout << "Desea que se muestre en pantalla el vector ordenado? ( S | [N] )";
             std::cin >> respuesta;
-            // si el usuario selecciono ver el resultado en pantalla lo umprime
+            // si el usuario selecciono ver el resultado en pantalla lo imprime
             if(respuesta == 'S' | respuesta == 's')
             {
                 for(int i=0; i<tamArreglo;++i){
@@ -171,15 +183,22 @@ int main(int argc, char ** argv){
         
         delete[] arregloLocal;
     }
+    // no se lleva a cabo la ejecucion
     else{
-        std::cout << "parametros incorrectos" << std::endl;
+        // unicamente el proceso cero, indica que hubo un error en los parametros 
+        if(idProceso == 0){
+            std::cout << "parametros incorrectos" << std::endl;
+        }
     }
     
     //Fin MPI
     MPI_Finalize();
     return 0;
 }
-
+/**
+ * Comprueba si numero es potencia de dos 
+ * 
+ **/
 bool comprobarNumeroPotenciaDeDos(int numero){
     bool respuesta = true;
     while (numero>1 && respuesta){
@@ -192,9 +211,9 @@ bool comprobarNumeroPotenciaDeDos(int numero){
 }
 
 /**
- * Se asume que el numero enviado es una potencia de dos
+ * Se asume que el numero enviado es una potencia de dos y obtiene el logaritmo en base dos de este
  **/
-int obtenerExponenteDeDosCorrespondiente(int numero){
+int obtenerLogaritmoEnBaseDos(int numero){
     int respuesta = 0;
     int comparador = 1;
     while (numero > comparador){
@@ -204,16 +223,21 @@ int obtenerExponenteDeDosCorrespondiente(int numero){
     return respuesta;
 }
 
+/* =========== METODOS MERGESORT ========== */
+/**
+ *  Codigo propio, se realizo para una tarea de Estructuras de Datos y Analisis de Algoritmos
+ * 
+ * */
 
 void mergesort(int * arreglo, int tamano)
 {
     // se hace un vector temporal de tamano n
     int * vectorTemporal = new int[tamano];
     mergesortR(arreglo,vectorTemporal, tamano);
+    // elimina el vector temporal
     delete [] vectorTemporal;
 };
 
-/* =========== METODOS MERGESORT ========== */
 
 /**
  * Es el llamado mergesort que se invoca recursivamente
@@ -292,9 +316,10 @@ void ordenarSubArreglos(int * arreglo1, int tamano1, int * arreglo2, int tamano2
 /**
   * Metodo auxiliar basado en el de ordenar los subarreglos,
   * con la diferencia de dejar el arreglo ordenado en el
-  * arreglo pasdo por parametro llamado destino
+  * arreglo pasdo por parametro llamado destino, y que necesariamente 
+  * los arreglos a mezclar deben ser del mismo tamaño
   **/
-void ordenarSubArreglosEnDestino(int * arreglo1, int tamano1, int * arreglo2, int tamano2, int * destino)
+void ordenarSubArreglosEnDestino(int * arreglo1, int * arreglo2, int tamano, int * destino)
 {
     int iteradorArreglo1 = 0;
     int iteradorArreglo2 = 0;
@@ -302,7 +327,7 @@ void ordenarSubArreglosEnDestino(int * arreglo1, int tamano1, int * arreglo2, in
     
     //va llenando el vector destino, comparando el primer elemento de cada subarreglo
     //se sale cuando termina de copiar todos, o ya se copiaron todos los valores de un vector
-    while (iteradorArregloDestino < tamano1+tamano2 && iteradorArreglo1 < tamano1 && iteradorArreglo2 < tamano2)
+    while (iteradorArregloDestino < tamano+tamano && iteradorArreglo1 < tamano && iteradorArreglo2 < tamano)
     {
         if(arreglo1[iteradorArreglo1] < arreglo2[iteradorArreglo2])
         {
@@ -319,18 +344,18 @@ void ordenarSubArreglosEnDestino(int * arreglo1, int tamano1, int * arreglo2, in
     }
     
     //entra cuando ya se copiaron todos los valores de un vector, se copian todos los del otro vector que queden
-    if (iteradorArregloDestino < tamano1+tamano2)
+    if (iteradorArregloDestino < tamano+tamano)
     {
-        if(iteradorArreglo1 < tamano1)
+        if(iteradorArreglo1 < tamano)
         {
-            for (; iteradorArreglo1 < tamano1; ++iteradorArreglo1, ++iteradorArregloDestino)
+            for (; iteradorArreglo1 < tamano; ++iteradorArreglo1, ++iteradorArregloDestino)
             {
                 destino[iteradorArregloDestino] = arreglo1[iteradorArreglo1];
             }
         }
         else
         {
-            for (; iteradorArreglo2 < tamano2; ++iteradorArreglo2, ++iteradorArregloDestino)
+            for (; iteradorArreglo2 < tamano; ++iteradorArreglo2, ++iteradorArregloDestino)
             {
                 destino[iteradorArregloDestino] = arreglo2[iteradorArreglo2];
             }
