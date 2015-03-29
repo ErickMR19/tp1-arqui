@@ -20,11 +20,11 @@ int main(int argc, char ** argv){
     // Iniciliza MPI
     MPI_Init(&argc,&argv);
     MPI_Status status;
-    // arreglos
+    // puntero a los arreglos
     int * arregloTotal;
     int * arregloLocal;
     
-    // banderas
+    // bandera de comprobacion
     bool parametrosCorrectos = true;
     
     //Obtiene el numero total de procesos
@@ -36,6 +36,7 @@ int main(int argc, char ** argv){
     // cantidad de numeros del vector
     int tamArreglo;
     
+    // cantidad de iteraciones necesarias
     int logaritmoProcesos;
     
     if( idProceso == 0 ){
@@ -82,7 +83,7 @@ int main(int argc, char ** argv){
             logaritmoProcesos = obtenerLogaritmoEnBaseDos(numProcesos);
         }
         else {
-            std::cout << "ejecucion terminada: parametros invalidos" << std::endl;
+            std::cout << "ejecucion terminada con error" << std::endl;
             parametrosCorrectos = false;
         }
         
@@ -115,7 +116,8 @@ int main(int argc, char ** argv){
         // apuntara al vector en el cual se mezclaran ambos vectores
         int * arregloTemporalDestino;
         
-        // hace el proceso una cantidad de veces que corresponde al logaritmo en base dos de la cantidad de procesos
+        // hace el proceso de envio/recibo una cantidad de veces que corresponde al 
+        // logaritmo en base dos de la cantidad de procesos
         while( logaritmoProcesos ){
             
             // si el modulo es cero entonces el proceso va a recibir
@@ -140,7 +142,9 @@ int main(int argc, char ** argv){
             else{
                 // envia su arreglo ordenado
                 MPI_Send(arregloLocal,tamArreglo,MPI_INT,idProceso-selector,19, MPI_COMM_WORLD);
-                // se sale del while
+                // todos los procesos eliminan su arreglo local antes de finalizar
+                delete[] arregloLocal;
+                // se sale del while, lo que le lleva a terminar el proceso
                 break;
             }
             // ya termino una iteracion
@@ -151,7 +155,7 @@ int main(int argc, char ** argv){
         }
         
         if(idProceso==0){
-            
+            delete[] arregloTotal;
             // abre el archivo ListaF
             std::ofstream archivoListaFinal("ListaF.txt");
             // verifica si puedo abrise
@@ -178,19 +182,19 @@ int main(int argc, char ** argv){
                     std::cout << arregloLocal[i] << std::endl;
                 }
             }
+            
+            // elimina su arreglo local antes de finalizar
+            delete[] arregloLocal;
         }
         
-        
-        delete[] arregloLocal;
     }
     // no se lleva a cabo la ejecucion
     else{
         // unicamente el proceso cero, indica que hubo un error en los parametros 
         if(idProceso == 0){
-            std::cout << "parametros incorrectos" << std::endl;
+            std::cout << "parametros incorrectos, el numero de procesos debe ser potencia de dos y la cantidad de elementos a ordenar debe ser multiplo de la cantidad de procesos" << std::endl;
         }
     }
-    
     //Fin MPI
     MPI_Finalize();
     return 0;
