@@ -102,15 +102,21 @@ int main(int argc, char ** argv){
         MPI_Scatter(arregloTotal,tamArreglo,MPI_INT,arregloLocal,tamArreglo,MPI_INT,0,MPI_COMM_WORLD);
         //cada proceso ordena su arreglo
         mergesort(arregloLocal,tamArreglo);
-        // Ciclo while donde lo van devolviendo hasta llegar a la raiz
         
         //Variables para la reduccion
+        
+        // se utiliza para conocer que proceso envía y cual recibe
         int modulo = 2;
         int selector = 1;
         
+        // apuntara al vector que se va a recibir
         int * arregloTemporalParaRecibir;
+        // apuntara al vector en el cual se mezclaran ambos vectores
         int * arregloTemporalDestino;
+        
+        // hace el proceso una cantidad de veces que corresponde al logaritmo en base dos de la cantidad de procesos
         while( exponenteProcesos ){
+            
             if(idProceso % modulo == 0){
                 arregloTemporalParaRecibir = new int[tamArreglo];
                 MPI_Recv(arregloTemporalParaRecibir,tamArreglo,MPI_INT,idProceso+selector,19, MPI_COMM_WORLD,&status);
@@ -121,23 +127,52 @@ int main(int argc, char ** argv){
                 delete[] arregloLocal;
                 arregloLocal = arregloTemporalDestino;
             }
+            
             else if(idProceso % modulo == selector){
                 MPI_Send(arregloLocal,tamArreglo,MPI_INT,idProceso-selector,19, MPI_COMM_WORLD);
                 break;
             }
+            
             --exponenteProcesos;
             modulo = modulo << 1;
             selector = selector << 1;    
         }
+        
         if(idProceso==0){
-            for(int i=0; i<tamArreglo;++i){
-                std::cout << arregloLocal[i] << std::endl;
+            
+            // abre el archivo ListaF
+            std::ofstream archivoListaFinal("ListaF.txt");
+            // verifica si puedo abrise
+            if( archivoListaFinal.is_open() )
+            {
+                // copia los elementos del arreglo en el archivo
+                for(int i = 0; i < tamArreglo;++i){
+                    archivoListaFinal << arregloLocal[i] << std::endl;
+                }
+            }
+            else{
+                std::cerr << "No se pudo crear el archivo ListaI.txt" << std::endl;
+                //Se advierte pero se continua con la ejecución normal
+            }
+            
+            // variable para la respuesta del usuario
+            char respuesta = 0;
+            std::cout << "Desea que se muestre en pantalla el vector ordenado? ( S | [N] )";
+            std::cin >> respuesta;
+            // si el usuario selecciono ver el resultado en pantalla lo umprime
+            if(respuesta == 'S' | respuesta == 's')
+            {
+                for(int i=0; i<tamArreglo;++i){
+                    std::cout << arregloLocal[i] << std::endl;
+                }
             }
         }
+        
+        
         delete[] arregloLocal;
     }
     else{
-        std::cout << "parametro incorrectos" << std::endl;
+        std::cout << "parametros incorrectos" << std::endl;
     }
     
     //Fin MPI
