@@ -128,7 +128,7 @@ int main(int argc, char ** argv){
                 arregloLocal = arregloTemporalDestino;
             }
             
-            else if(idProceso % modulo == selector){
+            else{
                 MPI_Send(arregloLocal,tamArreglo,MPI_INT,idProceso-selector,19, MPI_COMM_WORLD);
                 break;
             }
